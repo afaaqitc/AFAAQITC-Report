@@ -50,8 +50,7 @@ qx<-
          gain_n=ifelse(Income>0,1,0),loss_n=ifelse(Income==0,1,0)) %>% 
   mutate(Rrounds=ifelse(date >=as.Date("2024-02-05") & date<=as.Date("2024-03-08"),"RR1",
                         ifelse(date >=as.Date("2024-04-15") & date<=as.Date("2024-05-15"),"RR2",
-                               ifelse(date >=as.Date("2024-05-16") & date<=as.Date("2024-05-30"),"RR3",
-                                      ifelse(date >=as.Date("2024-05-31") & date<=as.Date("2024-07-30"),"RR4","-"))))) %>% 
+                               ifelse(date >=as.Date("2024-05-16") & date<=as.Date("2024-06-03"),"RR3",ifelse(date >as.Date("2024-06-03") & date<=as.Date("2024-06-30"),"RR4","-"))))) %>% 
   mutate(gain_amt=ifelse(gain_n==1,net,0),loss_amt=ifelse(loss_n==1,net,0)) 
 
 
@@ -105,7 +104,7 @@ loss_pct=sum(loss_n)/(sum(gain_n)+sum(loss_n)))
 
 main<-
 main%>% mutate(pct=Profits/balance) %>%
-select(Rrounds,balance,days,Profits,pct,gain_amt,loss_amt,gain_n,loss_n,loss_pct) %>%  
+select(Rrounds,balance,days,Profits,pct,gain_amt,loss_amt,gain_n,loss_n,loss_pct) %>%adorn_totals("row") %>%   
 datatable(class = "hover cell-broders stripe",
 colnames = c("Rounds","Balance","Days","Profits","PCT%","Gain_Amounts","Loss_Amounts","Gain_Trades","Loss_Trades","Loss%")
 ,extensions = list("Buttons"=TRUE),options =list(dom="Bfrtip",buttons=c("pdf","excel","csv")
@@ -136,9 +135,10 @@ formatPercentage(columns =11 ,digits = 2) %>% formatCurrency(columns =10 ,digits
 
 
 extract_rounds<-
-  qx %>% group_by(Rrounds,date) %>% summarize(Trades=n(),Gain_Trades=sum(gain_n),Loss_Trades=sum(loss_n),Profits=round(sum(net),2),Gain_Amounts=round(sum(gain_amt),2),Loss_Amounts=round(sum(loss_amt),2)) %>% adorn_totals("row") %>% datatable(filter = "top",class="hover cell-borders stripe", extensions = list("Buttons"=TRUE),
+qx %>%separate(Profit,c("Rate"),sep="%") %>% mutate(Rate=as.numeric(Rate))%>%   group_by(Rrounds,date) %>%  summarize(Trades=n(),Gain_Trades=sum(gain_n),Loss_Trades=sum(loss_n),Performance=sum(gain_n)/n(),Profits=round(sum(net),2),     AVG_Rate=mean(Rate)/100,Gain_Amounts=round(sum(gain_amt),2),Loss_Amounts=round(sum(loss_amt),2)) %>% adorn_totals("row") %>%
+datatable(filter = "top",class="hover cell-borders stripe", extensions = list("Buttons"=TRUE),
 options = list(dom="Bfrtip",buttons=c("csv","excel","pdf"),
-columnDefs=list(list(className="dt-center",targets="_all")))) 
+columnDefs=list(list(className="dt-center",targets="_all")))) %>% formatPercentage(columns = c(6,8),digits = 0)
 
 
 
@@ -349,12 +349,9 @@ datatable(class="hover cell-broders stripe",extensions = "Buttons",
                            columnDefs=list(list(className="dt-center",targets="_all"))))
 
 #Pie
-Type_Trades_pie<-
-Type_Trades %>% ggplot(aes(x="",y=Profits,fill=Type ))+
-  geom_bar(stat = "identity",width = 2)+coord_polar(theta = "y")+theme_void()+
-  geom_text(aes(label=Profits),color="white",size=4,position = position_stack(vjust = 0.5))+
-  scale_fill_brewer(palette = "Set1")
- 
+Type_Trades_pie<- 
+qx %>% mutate(net=ifelse(net<0,Amount,net)) %>% group_by(Type) %>% summarize(profits=round(sum(net),2)) %>% 
+plot_ly(.,labels=~factor(Type),values=~profits,type="pie",                                          marker=list(line=list(color="white",width=2)),textinfo="label+value+percent")
 
 
 #----------------------------------Search------------------------------------
@@ -364,45 +361,42 @@ qx %>% filter(date==as.Date("2024-05-29") ) %>%
 group_by(Fiats_code) %>% 
 summarize(Trades=n(),Loss=sum(loss_n),Gain=sum(gain_n),
 Profits=round(sum(net),2),loss_amounts=round(sum(loss_amt),2),
-gain_amount=round(sum(gain_amt),2)) %>% mutate(Class=ifelse(Profits>0,"Top","Loss")) %>% 
+gain_amount=round(sum(gain_amt),2) ,Amount=round(sum(Amount),2)) %>% mutate(Class=ifelse(Profits>0,"Top","Loss")) %>% 
  arrange(desc(Profits),by_group=TRUE)%>% adorn_totals("row") %>% 
 datatable(caption = "Currencies 29 May 2024",class = "hover cell-borders stripe",
- extensions =list("RowGroup"=TRUE,"Buttons"=TRUE) ,
- options =list(dom="Bfrtip",buttons=c("pdf","csv","excel"),"rowGroup"=list(dataSrc=8) ,
-               columnDefs=list(list(className="dt-center",targets="_all"),list(visible=FALSE,targets=8)))) 
+extensions =list("RowGroup"=TRUE,"Buttons"=TRUE) ,
+options =list(dom="Bfrtip",buttons=c("pdf","csv","excel"),"rowGroup"=list(dataSrc=9) ,
+columnDefs=list(list(className="dt-center",targets="_all"),list(visible=FALSE,targets=9)))) 
 
  
 
 
 
 search_trades_dt<-
-  qx %>% filter(date==as.Date("2024-05-29") ) %>% 
-  group_by(date) %>% 
-  summarize(Trades=n(),Loss=sum(loss_n),Gain=sum(gain_n),
-  Profits=round(sum(net),2),loss_amounts=round(sum(loss_amt),2),
-  gain_amount=round(sum(gain_amt),2)) %>%
-    arrange(desc(date),by_group=TRUE)%>%  
-  datatable(caption = "CLosed Trades 29 May 2024",class = "hover cell-borders stripe",
-            extensions =list("RowGroup"=TRUE,"Buttons"=TRUE) ,
-            options =list(dom="Bfrtip",buttons=c("pdf","csv","excel"),"rowGroup"=list(dataSrc=8) ,
-                          columnDefs=list(list(className="dt-center",targets="_all"),list(visible=FALSE,targets=8)))) 
+  qx %>% select(Rrounds,date,balance,Fiats_code,Profit,Type,Amount,net,gain_amt,loss_amt) %>% rename(Date=date,Balance=balance,Rate=Profit,Gross=net,Gain_Amounts=gain_amt,Loss_Amounts=loss_amt) %>% arrange(Date) %>% adorn_totals("row")%>%
+datatable(filter = "top",class="hover cell-broders stripe", extensions = list("RowGroup"=TRUE,"Buttons"=TRUE),
+options = list(pageLength=40,scrolly=TRUE,dom="Bfrtip",buttons=c("excel","csv","pdf"),
+"rowGroup"=list(dataSrc=1),
+columnDefs=list(list(className="dt-center",targets="_all"),list(visible=FALSE,targets=1))))
 
 
 
 
- 
+ #----------Line_Chart_Profits-------------------------------------------------------------------
 rr3_profits_day_chart<-
 qx %>%filter( date>=as.Date("2024-05-16")) %>% 
 group_by(date) %>% summarize(profits=round(sum(net),2)) %>% 
 ggplot(aes(x=date,y=profits))+
 geom_line(color="steelblue",size=1)+geom_point(colour = "black",size=1)+
-  geom_text(aes(label=profits),size=3.2,color="black",nudge_x =-.3 ,nudge_y =2)+
+  geom_text(aes(label=profits),size=3.2,color="black",nudge_y =4.5)+
   labs(x="",y="",title = "Trade Profits.")+theme_bw()+
 theme(axis.text.x = element_text(colour = "black",size=10,face = "bold",angle = 90),
       axis.text.y = element_text(colour = "black",size=10,face = "bold"))+
-  scale_x_date(date_labels = "%d-%b",date_breaks = "1 day")
+  scale_x_date(date_labels = "%d-%b",date_breaks = "1 day")+geom_smooth(method = "lm",se = FALSE,colour = "black")
 
-
+#----------------------Rates-------------------------------------------------------------------
+Rates_up16_dt<-
+qx %>%filter(date >= as.Date("2024-05-16")) %>% mutate(Rate=Profit)%>% group_by(Rate) %>% summarize(Trades=n(),Gain_Trades=sum(gain_n),Loss_Trades=sum(loss_n),Profits=round(sum(net),2),Gain_Amounts=round(sum(gain_amt),2),Loss_Amounts=round(sum(loss_amt),2)) %>% arrange(desc(Profits),by_group=TRUE) %>% adorn_totals("row")%>% datatable(class="hover cell-broders stripe",extensions = "Buttons",options = list(dom="Bfrtip",buttons=c("excel","csv","pdf"),colDefs=list(list(className="dt-center",targets="_all"))))
 
  
 
@@ -413,9 +407,9 @@ theme(axis.text.x = element_text(colour = "black",size=10,face = "bold",angle = 
 
 # Main
 ## row {data-hight=20} 
-### Totals
+### Profits
 ```{r}
-valueBox(value = round(sum(qx$net),2),caption = "Profits",icon = "fa fa-money",color = "#ffeaa7")
+valueBox(value = paste(round(sum(qx$net),2),"$"),caption = "Profits",icon = "fa fa-money",color = "#ffeaa7")
 ```
 ### Trades
 ```{r}
@@ -438,18 +432,18 @@ valueBox(value =max(rounds),caption = "Rounds",icon = "fa fa-globe",color = "#ff
 
 ### 
 ```{r}
-gauge(min =50 ,value = (sum(maind$gain_n)/sum(maind$gain_n+maind$loss_n))*100,max =100 ,sectors =gaugeSectors(success =c(50,70) ,warning =c(35,45) ,danger =c(20,40) ),symbol = "%",label = "Gain Trades")
+gauge(min =0 ,value = (sum(maind$gain_n)/sum(maind$gain_n+maind$loss_n))*100,max =100 ,sectors =gaugeSectors(success =c(50,70) ,warning =c(35,45) ,danger =c(20,40) ),symbol = "%",label = "Gain Trades")
 ```
 
 ### 
 ```{r}
-gauge(min =20 ,value = (sum(maind$loss_n)/sum(maind$gain_n+maind$loss_n))*100,max =60 ,sectors =gaugeSectors(success =c(10,30) ,warning =c(35,45) ,danger =c(55,60) ),symbol = "%",label = "Loss_Trades")
+gauge(min =0 ,value = (sum(maind$loss_n)/sum(maind$gain_n+maind$loss_n))*100,max =100 ,sectors =gaugeSectors(success =c(5,30) ,warning =c(35,45) ,danger =c(55,60) ),symbol = "%",label = "Loss_Trades")
 ```
 
 ## row {data-hight=990}
 ### Main
 ```{r}
-main
+main 
 ```
 
 # Sub_Main
@@ -464,6 +458,12 @@ sub_main
 ```{r}
 extract_rounds
 ```
+
+### Search_Trades
+```{r}
+search_trades_dt
+```
+
 
 ### 16May_chart
 ```{r}
@@ -533,4 +533,9 @@ hours_focus_chart %>% ggplotly(width = 1000)
 r3_16may
 ```
 
+# Rates
+### Up 16May
+```{r}
+Rates_up16_dt
+```
 
