@@ -23,7 +23,7 @@ library(janitor)
 library(plotly)
 
 
-setwd("~/Desktop/New_view/")
+setwd("/home/jmachiine/Documents/New_view")
 qx<-read.csv("qx.csv")
 fiats<-read.xlsx("currency_countries.xlsx")
 wallet<-read.xlsx("wallet.xlsx")
@@ -302,10 +302,9 @@ ggplot(aes(x=reorder(Fiats_code,Profits),y=Profits,fill = fiats))+
   geom_text(aes(label=Profits),position = position_stack(vjust = 0.5),size=3,color="black")+
   coord_flip()+
   labs(title = "Fiats Last 10 Days",x="",y="")+theme_bw()+
-  scale_y_continuous(limits = c(-100,400),labels = scales::number )+
+  scale_y_continuous(limits = c(-300,400),labels = scales::number )+
   theme(axis.text.x = element_text(size = 10,colour = "black",face = "bold"),
-        axis.text.y = element_text(size = 10,colour = "black",face = "bold"))
-)
+        axis.text.y = element_text(size = 10,colour = "black",face = "bold")))
 
 #------------------------------------------------------------------------------------
 
