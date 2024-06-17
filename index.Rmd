@@ -29,7 +29,6 @@ fiats<-read.xlsx("currency_countries.xlsx")
 wallet<-read.xlsx("wallet.xlsx")
 #-------------------Clean&Reshape-----------------------------------------------
 
-
 qx<-
   qx %>% select( -c("ID","Open.Price","Close.Price")) %>% 
   separate(Info,c("pairs"),sep=" ") %>%
@@ -50,10 +49,8 @@ qx<-
          gain_n=ifelse(Income>0,1,0),loss_n=ifelse(Income==0,1,0)) %>% 
   mutate(Rrounds=ifelse(date >=as.Date("2024-02-05") & date<=as.Date("2024-03-08"),"RR1",
                         ifelse(date >=as.Date("2024-04-15") & date<=as.Date("2024-05-15"),"RR2",
-                               ifelse(date >=as.Date("2024-05-16") & date<=as.Date("2024-06-03"),"RR3",ifelse(date >as.Date("2024-06-03") & date<=as.Date("2024-06-30"),"RR4","-"))))) %>% 
-  mutate(gain_amt=ifelse(gain_n==1,net,0),loss_amt=ifelse(loss_n==1,net,0)) 
-
-
+                               ifelse(date >=as.Date("2024-05-16") & date<=as.Date("2024-06-03"),"RR3",ifelse(date >as.Date("2024-06-03") & date<=as.Date("2024-06-06"),"RR4",ifelse(date >=as.Date("2024-06-15"),"RR5","-")))))) %>% 
+  mutate(gain_amt=ifelse(gain_n==1,net,0),loss_amt=ifelse(loss_n==1,net,0))
 #mutate(RRound=ifelse(between(date,as.Date("2024-02-05"),as.Date("2024-03-08")),"RR1","-"))
 
 qx<- wallet %>% inner_join(qx,by="Rrounds")  
