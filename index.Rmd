@@ -535,3 +535,40 @@ r3_16may
 Rates_up16_dt
 ```
 
+
+# Mhmoud
+## row {.tabset}
+### ساعات
+```{r}
+hours_focus_chart %>% ggplotly(width = 1000)
+```
+
+### ارباح
+```{r}
+rr3_profits_day_chart %>% ggplotly(width = 1000)
+```
+
+
+
+
+### الاتجاة
+```{r}
+Type_Trades_pie
+```
+
+
+### عملات_10_أيام
+```{r}
+  Fiats_last10_chart %>% ggplotly(width = 1000)
+```
+
+ 
+### عملات_ربح
+```{r}
+Fiats_Gain %>% ggplotly(width = 1000)
+```
+
+### عملات-خسارة
+```{r}
+  Fiats_Loss %>% ggplotly(width = 1000)
+```
