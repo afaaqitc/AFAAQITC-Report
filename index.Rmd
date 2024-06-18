@@ -219,6 +219,15 @@ r3_16may<-
   options = list(dom="Bfrtip",buttons=c("excel","csv","pdf"),"rowGroup"=list(dataSrc=1),
   columnDefs=list(list(visible=FALSE,targets=1),list(className="dt-center",targets="_all"))))
 
+
+
+#TimeRanges_Pie:
+
+timeranges_pie<-
+qx %>% group_by(timeranges) %>% summarize(profits=round(sum(net),2)) %>% ggplot(aes(x="",y=profits,fill=timeranges))+geom_bar(stat = "identity")+coord_polar(theta = "y")+theme_void()+geom_text(aes(label=profits),position = position_stack(vjust = 0.6),color="white",size=5)+scale_fill_brewer(palette = "Set1")
+
+
+
 #--------Fiats-------------------------------------------------------------------
 
  
@@ -538,6 +547,7 @@ Rates_up16_dt
 
 # Mhmoud
 ## row {.tabset}
+
 ### ساعات
 ```{r}
 hours_focus_chart %>% ggplotly(width = 1000)
@@ -572,3 +582,17 @@ Fiats_Gain %>% ggplotly(width = 1000)
 ```{r}
   Fiats_Loss %>% ggplotly(width = 1000)
 ```
+
+
+### التوقيتات
+
+```{r}
+timeranges_pie
+```
+
+
+
+
+
+
+
